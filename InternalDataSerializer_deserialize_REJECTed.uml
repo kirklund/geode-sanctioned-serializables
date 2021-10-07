@@ -1,0 +1,47 @@
+@startuml
+participant Message
+participant DataSerializer
+participant InternalDataSerializer
+participant DSObjectInputStream
+participant ObjectInputStream
+participant ObjectInputFilterProxy
+participant InvocationHandler
+
+activate Message
+Message -> DataSerializer: fromData
+activate DataSerializer
+DataSerializer -> InternalDataSerializer: read
+activate InternalDataSerializer
+InternalDataSerializer -> DSObjectInputStream: read
+activate DSObjectInputStream
+
+DSObjectInputStream -> ObjectInputStream: read
+activate ObjectInputStream
+ObjectInputStream -> ObjectInputFilterProxy: checkInput
+activate ObjectInputFilterProxy
+ObjectInputFilterProxy -> InvocationHandler: invoke
+activate InvocationHandler
+InvocationHandler -> InvocationHandler: check sanctionedClasses
+note over InvocationHandler: class //NOT// in sanctionedClasses
+InvocationHandler -> ObjectInputFilter: checkInput
+activate ObjectInputFilter
+ObjectInputFilter -> ObjectInputFilter: check pattern
+note over ObjectInputFilter: class //NOT// in pattern
+InvocationHandler <-- ObjectInputFilter: REJECT
+deactivate ObjectInputFilter
+ObjectInputFilterProxy <-- InvocationHandler: REJECT
+deactivate InvocationHandler
+ObjectInputStream <-- ObjectInputFilterProxy: REJECT
+deactivate ObjectInputFilterProxy
+
+ObjectInputStream -> ObjectInputStream: throw InvalidClassException
+DSObjectInputStream <-- ObjectInputStream: throw InvalidClassException
+deactivate ObjectInputStream
+InternalDataSerializer <-- DSObjectInputStream: throw InvalidClassException
+deactivate DSObjectInputStream
+DataSerializer <-- InternalDataSerializer: throw InvalidClassException
+deactivate InternalDataSerializer
+Message <-- DataSerializer: throw InvalidClassException
+deactivate DataSerializer
+deactivate Message
+@enduml

@@ -1,0 +1,41 @@
+@startuml
+participant ObjectInputStreamFilterWrapper
+box "SanctionedSerializablesService 1..n"
+participant SanctionedSerializablesService_1
+participant SanctionedSerializablesService_n
+end box
+participant ObjectInputFilter
+participant Proxy
+
+-> ObjectInputStreamFilterWrapper: create(pattern,\nserializable-object-filter,\nservices)
+activate ObjectInputStreamFilterWrapper
+
+ObjectInputStreamFilterWrapper -> SanctionedSerializablesService_1: load sanctioned classes
+activate SanctionedSerializablesService_1
+SanctionedSerializablesService_1 -> SanctionedSerializablesService_1: read sanctioned_geode_a_serializables.txt
+ObjectInputStreamFilterWrapper <-- SanctionedSerializablesService_1: sanctioned serializables
+deactivate SanctionedSerializablesService_1
+
+ObjectInputStreamFilterWrapper -> SanctionedSerializablesService_n: load sanctioned classes
+activate SanctionedSerializablesService_n
+SanctionedSerializablesService_n -> SanctionedSerializablesService_n: read sanctioned_geode_b_serializables.txt
+ObjectInputStreamFilterWrapper <-- SanctionedSerializablesService_n: sanctioned serializables
+deactivate SanctionedSerializablesService_n
+
+ObjectInputStreamFilterWrapper -> ObjectInputFilter: createFilter
+activate ObjectInputFilter
+note over ObjectInputFilter: sun.misc.ObjectInputFilter on Java 8\nor\njava.io.ObjectInputFilter on Java 9
+ObjectInputStreamFilterWrapper <-- ObjectInputFilter: objectInputFilter
+deactivate ObjectInputFilter
+
+ObjectInputStreamFilterWrapper -> Proxy: wrap objectInputFilter in Proxy with InvocationHandler
+activate Proxy
+Proxy -> ObjectInputFilterProxy: create(invocationHandler)
+activate ObjectInputFilterProxy
+Proxy <-- ObjectInputFilterProxy: objectInputFilterProxy
+deactivate ObjectInputFilterProxy
+ObjectInputStreamFilterWrapper <-- Proxy: objectInputFilterProxy
+deactivate Proxy
+
+deactivate ObjectInputStreamFilterWrapper
+@enduml

@@ -1,0 +1,51 @@
+@startuml
+participant CacheFactory
+participant InternalCacheBuilder
+participant InternalDistributedSystem
+participant DistributionConfig
+participant InternalDataSerializer
+participant SanctionedSerializables
+participant ObjectInputStreamFilterWrapper
+
+activate CacheFactory
+activate InternalCacheBuilder
+CacheFactory -> InternalCacheBuilder: create
+
+activate InternalDistributedSystem
+InternalCacheBuilder -> InternalDistributedSystem : create
+InternalDistributedSystem -> InternalDistributedSystem : initialize
+
+activate DistributionConfig
+InternalDistributedSystem -> DistributionConfig: create
+InternalDistributedSystem <-- DistributionConfig: config
+
+activate InternalDataSerializer
+InternalDistributedSystem -> InternalDataSerializer: initializeSerializationFilter(config)
+
+InternalDataSerializer -> SanctionedSerializables: loadSanctionedSerializablesServices
+activate SanctionedSerializables
+
+InternalDataSerializer <-- SanctionedSerializables: services
+deactivate SanctionedSerializables
+
+InternalDataSerializer -> DistributionConfig: get filter properties
+InternalDataSerializer <-- DistributionConfig: validate-serializable-objects\nserializable-object-filter
+deactivate DistributionConfig
+
+note over InternalDataSerializer: if validate-serializable-objects is enabled
+InternalDataSerializer -> ObjectInputStreamFilterWrapper: create(pattern, serializable-object-filter, services)
+activate ObjectInputStreamFilterWrapper
+
+InternalDataSerializer <-- ObjectInputStreamFilterWrapper: objectInputFilterProxy
+deactivate ObjectInputStreamFilterWrapper
+
+InternalDistributedSystem <-- InternalDataSerializer:
+deactivate InternalDataSerializer
+
+InternalCacheBuilder <-- InternalDistributedSystem: system
+deactivate InternalDistributedSystem
+
+CacheFactory <-- InternalCacheBuilder: cache
+deactivate InternalCacheBuilder
+deactivate CacheFactory
+@enduml

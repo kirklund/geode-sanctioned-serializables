@@ -1,0 +1,40 @@
+@startuml
+participant Message
+participant DataSerializer
+participant InternalDataSerializer
+participant DSObjectInputStream
+participant ObjectInputStream
+participant ObjectInputFilterProxy
+participant InvocationHandler
+
+activate Message
+Message -> DataSerializer: fromData
+activate DataSerializer
+DataSerializer -> InternalDataSerializer: read
+activate InternalDataSerializer
+InternalDataSerializer -> DSObjectInputStream: read
+activate DSObjectInputStream
+DSObjectInputStream -> ObjectInputStream: read
+activate ObjectInputStream
+
+ObjectInputStream -> ObjectInputFilterProxy: checkInput
+activate ObjectInputFilterProxy
+ObjectInputFilterProxy -> InvocationHandler: invoke
+activate InvocationHandler
+InvocationHandler -> InvocationHandler: check sanctionedClasses
+note over InvocationHandler: class in sanctionedClasses
+ObjectInputFilterProxy <-- InvocationHandler: ACCEPT
+deactivate InvocationHandler
+ObjectInputStream <-- ObjectInputFilterProxy: ACCEPT
+deactivate ObjectInputFilterProxy
+
+ObjectInputStream -> ObjectInputStream: deserialize
+DSObjectInputStream <-- ObjectInputStream: deserialized object
+InternalDataSerializer <-- DSObjectInputStream: deserialized object
+deactivate DSObjectInputStream
+DataSerializer <-- InternalDataSerializer: deserialized object
+deactivate InternalDataSerializer
+Message <-- DataSerializer: deserialized object
+deactivate DataSerializer
+deactivate Message
+@enduml
